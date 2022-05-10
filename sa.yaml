@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2022-04-27T04:54:26Z"
+  name: dashboard-sa
+  namespace: default
+  resourceVersion: "53838"
+  uid: 30ef2320-2730-4d24-bd31-9ffba326bef2
