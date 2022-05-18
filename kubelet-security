@@ -52,3 +52,6 @@ authorization:
 ### Disable metrics 
 readOnlyPort: 0
 ###
+
+kubectl proxy - Opens proxy port to API server
+kubectl port-forward - Opens port to target deployment pods
