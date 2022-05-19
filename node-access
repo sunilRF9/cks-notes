@@ -1,0 +1,30 @@
+# Suspend this user account so that this user cannot login to the system but make sure not to delete it.
+usermod -s /usr/sbin/nologin <user>
+
+
+# Create a user named sam on the controlplane host. The user's home directory must be /opt/sam. Login shell must be /bin/bash and uid must be 2328. Make sam a member of the admin group
+
+--s = shell
+--d = dir
+--G = group
+--u = uid
+useradd sam -s /bin/bash -d /opt/sam -G admin -u 2328
+
+
+adduser jim
+
+# commands without entering the sudo password
+# Members of the admin group may gain root privileges
+
+
+admin ALL=(ALL) ALL
+
+#add %
+
+%admin ALL=(ALL) ALL
+
+On node01 host, open /etc/sudoers file using any editor like vi and edit entry for user jim and forcefully save the file.
+
+Change jim ALL=(ALL:ALL) ALL
+
+To jim ALL=(ALL) NOPASSWD:ALL
