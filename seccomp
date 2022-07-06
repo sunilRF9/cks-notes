@@ -1,0 +1,167 @@
+Tracee uses eBPF to trace syscalls 
+
+bind locals vols 
+
+docker run --name tracee --rm --privileged --pid=host \
+-v /lib/modules/:/lib/modules/:ro -v /usr/src/:/usr/src/:ro \
+-v /tmp/tracee:/tmp/tracee aquasec/tracee:0.4.0 --tracee comm=ls
+
+------ ----------- ----------- --------- --------- ----------------
+root@controlplane:/# strace -c ls
+bin   dev  home        initrd.img.old  lib64       media  opt   root  sbin  srv  tmp  var      vmlinuz.old
+boot  etc  initrd.img  lib             lost+found  mnt    proc  run   snap  sys  usr  vmlinuz
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 15.29    0.000179          16        11           close
+ 14.77    0.000173          14        12           mprotect
+  8.71    0.000102          10        10           fstat
+  8.03    0.000094          10         9           openat
+  6.32    0.000074          37         2           write
+  6.32    0.000074          37         2           getdents
+  6.06    0.000071          36         2         2 statfs
+  4.87    0.000057           8         7           read
+  4.44    0.000052          26         2           ioctl
+  4.36    0.000051          26         2           rt_sigaction
+  4.27    0.000050          17         3           brk
+  2.82    0.000033          33         1           munmap
+  2.48    0.000029           4         8         8 access
+  2.48    0.000029          29         1           prlimit64
+  2.39    0.000028           2        17           mmap
+  2.13    0.000025          25         1           rt_sigprocmask
+  2.13    0.000025          25         1           set_tid_address
+  2.13    0.000025          25         1           set_robust_list
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.001171                    94        10 total
+------ ----------- ----------- --------- --------- ----------------
+
+root@controlplane:/# docker run --name tracee --rm --privileged -v /lib/modules/:/lib/modules/:ro -v /usr/src:/usr/src:ro -v /tmp/tracee:/tmp/tracee -it aquasec/tracee:0.4.0 --trace container=new
+Unable to find image 'aquasec/tracee:0.4.0' locally
+0.4.0: Pulling from aquasec/tracee
+596ba82af5aa: Pull complete 
+79838d9f31c1: Pull complete 
+1ecb0bc0816d: Pull complete 
+8006fb4fbef7: Pull complete 
+Digest: sha256:d2706ee950677763991fb434b228f78cb8a05c20a85e537e131181cc0fe85fe3
+Status: Downloaded newer image for aquasec/tracee:0.4.0
+TIME(s)        UTS_NAME         UID    COMM             PID/host        TID/host        RET              EVENT                ARGS
+3073.607614    hello            0      runc:[2:INIT]    1      /23444   1      /23444   0                execve               pathname: /pause, argv: [/pause]
+3073.608347    hello            0      runc:[2:INIT]    1      /23444   1      /23444   0                security_bprm_check  pathname: /pause, dev: 265289728, inode: 397000
+3077.940889    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                execve               pathname: /usr/bin/echo, argv: [echo hello]
+3077.941045    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                security_bprm_check  pathname: /usr/bin/echo, dev: 265289728, inode: 285726
+3077.941162    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                cap_capable          cap: CAP_SYS_ADMIN
+3077.941205    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                cap_capable          cap: CAP_SYS_ADMIN
+3077.941255    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                cap_capable          cap: CAP_SYS_ADMIN
+3077.941281    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                cap_capable          cap: CAP_SYS_ADMIN
+3077.941308    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                cap_capable          cap: CAP_SYS_ADMIN
+3077.941339    hello            0      runc:[2:INIT]    1      /23585   1      /23585   0                cap_capable          cap: CAP_SYS_ADMIN
+3077.942939    hello            0      echo             1      /23585   1      /23585   -2               access               pathname: /etc/ld.so.preload, mode: R_OK
+3077.942987    hello            0      echo             1      /23585   1      /23585   0                security_file_open   pathname: /etc/ld.so.cache, flags: O_RDONLY|O_LARGEFILE, dev: 265289728, inode: 537784
+3077.943035    hello            0      echo             1      /23585   1      /23585   3                openat               dirfd: -100, pathname: /etc/ld.so.cache, flags: O_RDONLY|O_CLOEXEC, mode: 0
+3077.943079    hello            0      echo             1      /23585   1      /23585   0                close                fd: 3
+3077.943119    hello            0      echo             1      /23585   1      /23585   0                security_file_open   pathname: /usr/lib/x86_64-linux-gnu/libc.so.6, flags: O_RDONLY|O_LARGEFILE, dev: 265289728, inode: 39185
+3077.943153    hello            0      echo             1      /23585   1      /23585   3                openat               dirfd: -100, pathname: /lib/x86_64-linux-gnu/libc.so.6, flags: O_RDONLY|O_CLOEXEC, mode: 0
+3077.943271    hello            0      echo             1      /23585   1      /23585   0                close                fd: 3
+3077.943577    hello            0      echo             1      /23585   1      /23585   0                close                fd: 1
+3077.943609    hello            0      echo             1      /23585   1      /23585   0                close                fd: 2
+3077.943683    hello            0      echo             1      /23585   1      /23585   0                sched_process_exit   
+3078.932601    hello            0      pause            1      /23444   1      /23444   0                sched_process_exit
+------ ----------- ----------- --------- --------- ----------------
+
+defaultAction is SCMP_ACT_ERRNO 
+profile is whitelist
+
+root@controlplane:~# cat custom-profile.json 
+{
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "architectures": [
+        "SCMP_ARCH_X86_64",
+        "SCMP_ARCH_X86",
+        "SCMP_ARCH_X32"
+    ],
+    "syscalls": [
+        {
+            "names": [
+                "accept4",
+                "epoll_wait",
+                "pselect6",
+                "futex",
+                "madvise",
+                "epoll_ctl",
+                "getsockname",
+                "setsockopt",
+                "vfork",
+                "mmap",
+                "read",
+                "write",
+                "close",
+                "arch_prctl",
+                "sched_getaffinity",
+                "munmap",
+                "brk",
+                "rt_sigaction",
+                "rt_sigprocmask",
+                "sigaltstack",
+                "gettid",
+                "clone",
+                "bind",
+                "socket",
+                "openat",
+                "readlinkat",
+                "exit_group",
+                "epoll_create1",
+                "listen",
+                "rt_sigreturn",
+                "sched_yield",
+                "clock_gettime",
+                "connect",
+                "dup2",
+                "epoll_pwait",
+                "execve",
+                "exit",
+                "fcntl",
+                "getpid",
+                "getuid",
+                "ioctl",
+                "mprotect",
+                "nanosleep",
+                "open",
+                "poll",
+                "recvfrom",
+                "sendto",
+                "set_tid_address",
+                "setitimer",
+                "writev"
+            ],
+            "action": "SCMP_ACT_ALLOW"
+        }
+    ]
+}
+
+------ ----------- ----------- --------- --------- ----------------
+default seccomp profile location : /var/lib/kubelet/seccomp/profiles
+------ ----------- ----------- --------- --------- ----------------
+Create a new pod called audit-nginx using the nginx image and make use of the audit.json seccomp profile in the pod's security context.
+
+The audit.json file is already present in the default seccomp profile path in the controlplane node.
+root@controlplane:~# cat pod.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: audit-nginx
+  name: audit-nginx
+spec:
+  securityContext:
+    seccompProfile:
+      type: Localhost
+      localhostProfile: profiles/audit.json
+  containers:
+  - image: nginx
+    name: audit-nginx
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
