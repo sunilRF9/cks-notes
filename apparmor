@@ -1,0 +1,211 @@
+aa-status to check if AppArmor is loaded or not.
+
+root@controlplane:/# aa-status 
+apparmor module is loaded.
+56 profiles are loaded.
+19 profiles are in enforce mode.
+   /sbin/dhclient
+   /usr/bin/lxc-start
+   /usr/bin/man
+   /usr/lib/NetworkManager/nm-dhcp-client.action
+   /usr/lib/NetworkManager/nm-dhcp-helper
+   /usr/lib/chromium-browser/chromium-browser//browser_java
+   /usr/lib/chromium-browser/chromium-browser//browser_openjdk
+   /usr/lib/chromium-browser/chromium-browser//sanitized_helper
+   /usr/lib/connman/scripts/dhclient-script
+   /usr/lib/snapd/snap-confine
+   /usr/lib/snapd/snap-confine//mount-namespace-capture-helper
+   /usr/sbin/tcpdump
+   docker-default
+   lxc-container-default
+   lxc-container-default-cgns
+   lxc-container-default-with-mounting
+   lxc-container-default-with-nesting
+   man_filter
+   man_groff
+37 profiles are in complain mode.
+   /usr/lib/chromium-browser/chromium-browser
+   /usr/lib/chromium-browser/chromium-browser//chromium_browser_sandbox
+   /usr/lib/chromium-browser/chromium-browser//lsb_release
+   /usr/lib/chromium-browser/chromium-browser//xdgsettings
+   /usr/lib/dovecot/anvil
+   /usr/lib/dovecot/auth
+   /usr/lib/dovecot/config
+   /usr/lib/dovecot/deliver
+   /usr/lib/dovecot/dict
+   /usr/lib/dovecot/dovecot-auth
+   /usr/lib/dovecot/dovecot-lda
+   /usr/lib/dovecot/dovecot-lda///usr/sbin/sendmail
+   /usr/lib/dovecot/imap
+   /usr/lib/dovecot/imap-login
+   /usr/lib/dovecot/lmtp
+   /usr/lib/dovecot/log
+   /usr/lib/dovecot/managesieve
+   /usr/lib/dovecot/managesieve-login
+   /usr/lib/dovecot/pop3
+   /usr/lib/dovecot/pop3-login
+   /usr/lib/dovecot/ssl-params
+   /usr/sbin/avahi-daemon
+   /usr/sbin/dnsmasq
+   /usr/sbin/dnsmasq//libvirt_leaseshelper
+   /usr/sbin/dovecot
+   /usr/sbin/identd
+   /usr/sbin/mdnsd
+   /usr/sbin/nmbd
+   /usr/sbin/nscd
+   /usr/sbin/smbd
+   /usr/sbin/smbldap-useradd
+   /usr/sbin/smbldap-useradd///etc/init.d/nscd
+   /usr/{sbin/traceroute,bin/traceroute.db}
+   klogd
+   ping
+   syslog-ng
+   syslogd
+14 processes have profiles defined.
+14 processes are in enforce mode.
+   docker-default (2291) 
+   docker-default (2322) 
+   docker-default (2334) 
+   docker-default (2363) 
+   docker-default (2516) 
+   docker-default (2602) 
+   docker-default (2612) 
+   docker-default (2651) 
+   docker-default (3440) 
+   docker-default (3446) 
+   docker-default (4517) 
+   docker-default (4544) 
+   docker-default (4718) 
+   docker-default (4780) 
+0 processes are in complain mode.
+0 processes are unconfined but have a profile defined.
+------------------------------------------------------------
+Labels:       run=nginx
+Annotations:  container.apparmor.security.beta.kubernetes.io/nginx: localhost/custom-nginx
+Status:       Pending
+Reason:       AppArmor
+Message:      Cannot enforce AppArmor: profile "custom-nginx" is not loaded
+------------------------------------------------------------
+Load the AppArmor profile called custom-nginx on controlplane and make sure that it is in enforced mode.
+
+The profile file is called usr.sbin.nginx located in the default AppArmor profiles directory.
+
+Options:
+--------
+-a, --add               Add apparmor definitions [default]
+-r, --replace           Replace apparmor definitions
+-R, --remove            Remove apparmor definitions
+-C, --Complain          Force the profile into complain mode
+-B, --binary            Input is precompiled profile
+-N, --names             Dump names of profiles in input.
+-S, --stdout            Dump compiled profile to stdout
+-o n, --ofile n         Write output to file n
+-b n, --base n          Set base dir and cwd
+-I n, --Include n       Add n to the search path
+-f n, --subdomainfs n   Set location of apparmor filesystem
+-m n, --match-string n  Use only features n
+-M n, --features-file n Use only features in file n
+-n n, --namespace n     Set Namespace for the profile
+-X, --readimpliesX      Map profile read permissions to mr
+-k, --show-cache        Report cache hit/miss details
+-K, --skip-cache        Do not attempt to load or save cached profiles
+-T, --skip-read-cache   Do not attempt to load cached profiles
+-W, --write-cache       Save cached profile (force with -T)
+    --skip-bad-cache    Don't clear cache if out of sync
+    --purge-cache       Clear cache regardless of its state
+    --debug-cache       Debug cache file checks
+-L, --cache-loc n       Set the location of the profile cache
+-q, --quiet             Don't emit warnings
+-v, --verbose           Show profile names as they load
+-Q, --skip-kernel-load  Do everything except loading into kernel
+-V, --version           Display version info and exit
+-d [n], --debug         Debug apparmor definitions OR [n]
+-p, --preprocess        Dump preprocessed profile
+-D [n], --dump          Dump internal info for debugging
+-O [n], --Optimize      Control dfa optimizations
+-h [cmd], --help[=cmd]  Display this text or info about cmd
+-j n, --jobs n          Set the number of compile threads
+--max-jobs n            Hard cap on --jobs. Default 8*cpus
+--abort-on-error        Abort processing of profiles on first error
+--skip-bad-cache-rebuild Do not try rebuilding the cache if it is rejected by the kernel
+--warn n                Enable warnings (see --help=warn)
+
+root@controlplane:/etc/apparmor.d# apparmor_parser -q usr.sbin.nginx
+
+------------------------------------------------------------
+root@controlplane:/etc/apparmor.d# cat usr.sbin.nginx-updated 
+#include <tunables/global>
+
+profile restricted-nginx flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  network inet tcp,
+  network inet udp,
+  network inet icmp,
+
+  deny network raw,
+
+  deny network packet,
+
+  file,
+  umount,
+
+  deny /bin/** wl,
+  deny /usr/share/nginx/html/restricted/* rw,
+  deny /boot/** wl,
+  deny /dev/** wl,
+  deny /etc/** wl,
+  deny /home/** wl,
+  deny /lib/** wl,
+  deny /lib64/** wl,
+  deny /media/** wl,
+  deny /mnt/** wl,
+  deny /opt/** wl,
+  deny /proc/** wl,
+  deny /root/** wl,
+  deny /sbin/** wl,
+  deny /srv/** wl,
+  deny /tmp/** wl,
+  deny /sys/** wl,
+  deny /usr/** wl,
+
+  audit /** w,
+
+  /var/run/nginx.pid w,
+
+  /usr/sbin/nginx ix,
+
+  deny /bin/dash mrwklx,
+  deny /bin/sh mrwklx,
+  deny /usr/bin/top mrwklx,
+
+
+  capability chown,
+  capability dac_override,
+  capability setuid,
+  capability setgid,
+  capability net_bind_service,
+
+  deny @{PROC}/{*,**^[0-9*],sys/kernel/shm*} wkx,
+  deny @{PROC}/sysrq-trigger rwklx,
+  deny @{PROC}/mem rwklx,
+  deny @{PROC}/kmem rwklx,
+  deny @{PROC}/kcore rwklx,
+  deny mount,
+  deny /sys/[^f]*/** wklx,
+  deny /sys/f[^s]*/** wklx,
+  deny /sys/fs/[^c]*/** wklx,
+  deny /sys/fs/c[^g]*/** wklx,
+  deny /sys/fs/cg[^r]*/** wklx,
+  deny /sys/firmware/efi/efivars/** rwklx,
+  deny /sys/kernel/security/** rwklx,
+}
+root@controlplane:/etc/apparmor.d# apparmor_parser -q usr.sbin.nginx-updated 
+root@controlplane:/etc/apparmor.d# aa-status | grep -i restricted-nginx
+   restricted-nginx
+root@controlplane:~/CKS# kubectl get po nginx -oyaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/nginx: localhost/restricted-nginx
