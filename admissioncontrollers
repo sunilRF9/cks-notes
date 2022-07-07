@@ -1,0 +1,29 @@
+kubectl --> AuthN (kubeconfig - certs) --> AuthZ --> (RBAC) --> AdmissionControllers --> APIServer 
+
+kubectl exec -it kube-apiserver-play-control-plane -n  kube-system -- kube-apiserver -h | grep enable-admission-plugins
+      --admission-control strings              Admission is divided into two phases. In the first phase, only mutating admission plugins run. In the second phase, only validating admission plugins run. The names in the below list may represent a validating plugin, a mutating plugin, or both. The order of plugins in which they are passed to this flag does not matter. Comma-delimited list of: AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyServiceExternalIPs, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook. (DEPRECATED: Use --enable-admission-plugins or --disable-admission-plugins instead. Will be removed in a future version.)
+      --enable-admission-plugins strings       admission plugins that should be enabled in addition to default enabled ones (NamespaceLifecycle, LimitRanger, ServiceAccount, TaintNodesByCondition, Priority, DefaultTolerationSeconds, DefaultStorageClass, StorageObjectInUseProtection, PersistentVolumeClaimResize, RuntimeClass, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, MutatingAdmissionWebhook, ValidatingAdmissionWebhook, ResourceQuota). Comma-delimited list of admission plugins: AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyServiceExternalIPs, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook. The order of plugins in this flag does not matter.
+
+
+root@controlplane ~ ➜  kubectl create secret tls webhook-server-tls -n webhook-demo --cert=/root/keys/webhook-server-tls.crt --key=/root/keys/webhook-server-tls.key 
+secret/webhook-server-tls created
+-------------------------------------------------------
+root@controlplane ~ ➜  cat webhook-configuration.yaml 
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: demo-webhook
+webhooks:
+  - name: webhook-server.webhook-demo.svc
+    clientConfig:
+      service:
+        name: webhook-server
+        namespace: webhook-demo
+        path: "/mutate"
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURQekNDQWllZ0F3SUJBZ0lVR0t6eUxhNTM4QzVHcWdrLzcrR3NmS2tyTFhJd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0x6RXRNQ3NHQTFVRUF3d2tRV1J0YVhOemFXOXVJRU52Ym5SeWIyeHNaWElnVjJWaWFHOXZheUJFWlcxdgpJRU5CTUI0WERUSXlNRGN3TnpBMk16UXpOVm9YRFRJeU1EZ3dOakEyTXpRek5Wb3dMekV0TUNzR0ExVUVBd3drClFXUnRhWE56YVc5dUlFTnZiblJ5YjJ4c1pYSWdWMlZpYUc5dmF5QkVaVzF2SUVOQk1JSUJJakFOQmdrcWhraUcKOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXNIYlVKd2h0cWpMazBWSkJkckUzblJjNnVRQ3Y5QkE3S0o5Two5djdGQzI0Q3BCMVIydDB6dUkvVlhnVEx4a0dvbEErWVhiWDBWLzV5RCtQQzVYeXNqM05XVTFnTXFBSlMzOVBHCnFuaHdoN21vQTBMVDlCMEpYa0YvaytKRzViSDZTcUk4em1FMitnVytjU3RUS0krR2JJMlRJaU92dHRjWlNWaWEKc0sxUlpPZG5ZK0NqSE1CNGJUZmdSMDB3QUdIRE12VEFjMW9iR2pUM0Uwb0hzQzBmLys3WmxoSjZIVk9TL1RLZwpxbHhZOUh6U1VsNEdvMVZrNXdEMmJTdWQrZWxuRHc4cklDWGF3U3RWK2QyUUdKQ1JDcnhDYWpTb09SSzlmdHVKCmgya1E2S21wTHZRTjFrM2xjOWh3LzFjL3BXUm1TaE52L0ttOXdGRzQ2OEUzRUp1Rnd3SURBUUFCbzFNd1VUQWQKQmdOVkhRNEVGZ1FVazFFZVIraEtlQTlpZS82SUV0YW40Zm4raWtZd0h3WURWUjBqQkJnd0ZvQVVrMUVlUitoSwplQTlpZS82SUV0YW40Zm4raWtZd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBTkJna3Foa2lHOXcwQkFRc0ZBQU9DCkFRRUFTbHRvRW9mdXR0bU1DTHlzdnZYcTZRenU3ZW9uMEJ1emZIR2V6Y2JRcm42VDJjWmxlOWlmbENBV2thQkIKai9XTFhnL2FHQjFIcDE1M3ZnbnBLcXJoblQ1U3dJZXM5K2RJdzNWV3JIV1MyWG5Fc0U1R1VuTHlWMk9GeTlvTgpnR05GUmRXZkRDQitqSUxvcDRXeEROaFFqMUxCUE5seW9MVEZycFpMRElDZEszNkM2Wk5BWXhPZk1ud1JyN3ZECjFNbUJmOER3VE8yS01yaUNvaE9KL0c1QU9BRkJudFNhUG5kWDdlelkrYjJ0bzVseTcrdXE2bEl0MkFaQzFwUHgKN0N3LzFQcXQ4NElOcHdIVjRuRS9HQkF2RkU0ZWs1emxHZG0reXpqaGc2cWFMMUNPcnZDbmVOSUNGSHpTaDY3bgpKSVRna1JDcytSR3RCSTZ4ZmFSUVdNT0dVUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+-------------------------------------------------------
