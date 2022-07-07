@@ -1,0 +1,49 @@
+root@controlplane ~ ➜  cat psp.yaml 
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: example-psp
+spec:
+  privileged: false
+  seLinux:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
+  volumes:
+  - configMap
+  - secret
+  - emptyDir
+  - hostPath
+
+root@controlplane ~ ➜  k apply -f psp.yaml 
+podsecuritypolicy.policy/example-psp created
+
+
+root@controlplane ~ ✖ cat pod.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+    name: example-app
+spec:
+    containers:
+        -
+            name: example-app
+            image: ubuntu
+            command: ["sleep" , "3600"]
+            securityContext:
+              privileged: True
+              runAsUser: 0
+              capabilities:
+                add: ["CAP_SYS_BOOT"]
+    volumes:
+    -   name: data-volume
+        hostPath:
+          path: '/data'
+          type: Directory
+
+root@controlplane ~ ➜  k apply -f pod.yaml 
+Error from server (Forbidden): error when creating "pod.yaml": pods "example-app" is forbidden: PodSecurityPolicy: unable to admit pod: [spec.containers[0].securityContext.privileged: Invalid value: true: Privileged containers are not allowed spec.containers[0].securityContext.capabilities.add: Invalid value: "CAP_SYS_BOOT": capability may not be added]
