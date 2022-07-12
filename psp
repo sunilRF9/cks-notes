@@ -1,3 +1,4 @@
+--------- PodSecurityPolicy ---------
 root@controlplane ~ ➜  cat psp.yaml 
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
