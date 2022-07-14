@@ -1,0 +1,90 @@
+root@controlplane ~ ✖ kubectl get runtimeclasses.node.k8s.io gvisor 
+NAME     HANDLER   AGE
+gvisor   runsc     2m27s
+
+
+root@controlplane ~ ➜  kubectl describe runtimeclasses.node.k8s.io gvisor
+Name:         gvisor
+Namespace:    
+Labels:       <none>
+Annotations:  <none>
+API Version:  node.k8s.io/v1
+Handler:      runsc
+Kind:         RuntimeClass
+Metadata:
+  Creation Timestamp:  2022-07-14T06:03:48Z
+  Managed Fields:
+    API Version:  node.k8s.io/v1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:handler:
+      f:metadata:
+        f:annotations:
+          .:
+          f:kubectl.kubernetes.io/last-applied-configuration:
+    Manager:         kubectl-client-side-apply
+    Operation:       Update
+    Time:            2022-07-14T06:03:48Z
+  Resource Version:  636
+  UID:               c1cadf57-9a16-48ff-a88f-c161569163ea
+Events:              <none>
+
+root@controlplane ~ ➜  kubectl describe runtimeclasses.node.k8s.io kata-containers 
+Name:         kata-containers
+Namespace:    
+Labels:       <none>
+Annotations:  <none>
+API Version:  node.k8s.io/v1
+Handler:      kata-runtime
+Kind:         RuntimeClass
+Metadata:
+  Creation Timestamp:  2022-07-14T06:03:49Z
+  Managed Fields:
+    API Version:  node.k8s.io/v1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:handler:
+      f:metadata:
+        f:annotations:
+          .:
+          f:kubectl.kubernetes.io/last-applied-configuration:
+    Manager:         kubectl-client-side-apply
+    Operation:       Update
+    Time:            2022-07-14T06:03:49Z
+  Resource Version:  637
+  UID:               f8bc496e-2c82-42dd-bdd9-a551880beeae
+Events:              <none>
+
+
+-----------------------------------------------------
+Create a new runtime class called secure-runtime with the following specs:
+
+Name: secure-runtime
+Handler: runsc
+
+root@controlplane ~ ➜  cat rtc.yaml 
+
+# RuntimeClass is defined in the node.k8s.io API group
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  # The name the RuntimeClass will be referenced by.
+  # RuntimeClass is a non-namespaced resource.
+  name: secure-runtime
+# The name of the corresponding CRI configuration
+handler: runsc
+
+
+root@controlplane ~ ➜  kubectl apply -f rtc.yaml 
+runtimeclass.node.k8s.io/secure-runtime created
+
+root@controlplane ~ ✖ kubectl get pods simple-webapp-1 -oyaml | grep -i runtime
+      {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"name":"simple-webapp"},"name":"simple-webapp-1","namespace":"default"},"spec":{"containers":[{"image":"kodekloud/webapp-delayed-start","name":"simple-webapp","ports":[{"containerPort":8080}]}],"runtimeClassName":"secure-runtime"}}
+  runtimeClassName: secure-runtime
+
+
+Events:
+  Type     Reason                  Age               From               Message
+  ----     ------                  ----              ----               -------
+  Normal   Scheduled               49s               default-scheduler  Successfully assigned default/simple-webapp-1 to controlplane
+  Warning  FailedCreatePodSandBox  6s (x4 over 49s)  kubelet            Failed to create pod sandbox: rpc error: code = Unknown desc = RuntimeHandler "runsc" not supported
