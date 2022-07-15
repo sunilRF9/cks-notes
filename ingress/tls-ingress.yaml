@@ -1,0 +1,41 @@
+# Create TLS secrets in the right ns 
+#The Nginx Ingress Controller has been installed and an Ingress resource configured in Namespace world .
+#You can reach the application using
+#curl http://world.universe.mine:30080/europe
+#Generate a new TLS certificate using:
+#openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt -subj "/CN=world.universe.mine/O=world.universe.mine"
+#Configure the Ingress to use the new certificate, so that you can call
+#curl -kv https://world.universe.mine:30443/europe
+#The curl verbose output should show the new certificate being used instead of the default Ingress one.
+
+#kubectl -n world create secret tls ingress-tls --key cert.key --cert cert.crt
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: world
+  namespace: world
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - world.universe.mine
+    secretName: ingress-secret
+  rules:
+  - host: world.universe.mine
+    http:
+      paths:
+      - backend:
+          service:
+            name: europe
+            port:
+              number: 80
+        path: /europe
+        pathType: Prefix
+      - backend:
+          service:
+            name: asia
+            port:
+              number: 80
+        path: /asia
+        pathType: Prefix
