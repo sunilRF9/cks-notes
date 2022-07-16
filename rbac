@@ -1,0 +1,54 @@
+#There are existing Namespaces ns1 and ns2 .
+#Create ServiceAccount pipeline in both Namespaces.
+#These SAs should be allowed to view almost everything in the whole cluster. You can use the default ClusterRole view for this.
+#These SAs should be allowed to create and delete Deployments in Namespaces ns1 and ns2 .
+#Verify everything using kubectl auth can-i .
+
+#Role + RoleBinding (available in single Namespace, applied in single Namespace)
+#ClusterRole + ClusterRoleBinding (available cluster-wide, applied cluster-wide)
+#ClusterRole + RoleBinding (available cluster-wide, applied in single Namespace)
+#Role + ClusterRoleBinding (NOT POSSIBLE: available in single Namespace, applied cluster-wide)
+
+# create Namespaces
+k -n ns1 create sa pipeline
+k -n ns2 create sa pipeline
+
+# use ClusterRole view
+k get clusterrole view # there is default one
+k create clusterrolebinding pipeline-view --clusterrole view --serviceaccount ns1:pipeline --serviceaccount ns2:pipeline
+
+# manage Deployments in both Namespaces
+k create clusterrole -h # examples
+k create clusterrole pipeline-deployment-manager --verb create,delete --resource deployments
+# instead of one ClusterRole we could also create the same Role in both Namespaces
+
+k -n ns1 create rolebinding pipeline-deployment-manager --clusterrole pipeline-deployment-manager --serviceaccount ns1:pipeline
+k -n ns2 create rolebinding pipeline-deployment-manager --clusterrole pipeline-deployment-manager --serviceaccount ns2:pipeline
+
+
+#User smoke should have view permissions (like the permissions of the default ClusterRole named view ) in all Namespaces but not in kube-system.
+#ClusterRole + RoleBinding (available cluster-wide, applied in single Namespace)
+
+controlplane $ k get ns
+NAME              STATUS   AGE
+applications      Active   8m47s
+default           Active   72d
+kube-node-lease   Active   72d
+kube-public       Active   72d
+kube-system       Active   72d
+
+controlplane $ k -n applications create rolebinding smoky --clusterrole=view --user=smoke
+rolebinding.rbac.authorization.k8s.io/smoky created
+controlplane $ k -n default create rolebinding smoky --clusterrole=view --user=smoke
+rolebinding.rbac.authorization.k8s.io/smoky created
+controlplane $ k -n kube-node-lease  create rolebinding smoky --clusterrole=view --user=smoke
+rolebinding.rbac.authorization.k8s.io/smoky created
+controlplane $ k -n kube-public create rolebinding smoky --clusterrole=view --user=smoke
+rolebinding.rbac.authorization.k8s.io/smoky created
+
+controlplane $ k auth can-i delete deployments --as smoke -n applications
+yes
+controlplane $ k auth can-i list pods --as smoke -n default
+yes
+controlplane $ k auth can-i list pods --as smoke -n kube-system
+no
