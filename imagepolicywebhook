@@ -1,0 +1,51 @@
+#Make sure admission_config.json points to correct kubeconfig
+#Set the allowTTL to 100
+#All Pod creation should be prevented if the external service is not reachable
+#The external service will be reachable under https://localhost:1234 in the future. It doesn't exist yet so it shouldn't be able to create any Pods till then
+#Register the correct admission plugin in the apiserver
+
+admission_config.json  apiserver-client-cert.pem  apiserver-client-key.pem  external-cert.pem  external-key.pem  kubeconf
+controlplane $ pwd
+/etc/kubernetes/policywebhook
+controlplane $ cat admission_config.json 
+{
+   "apiVersion": "apiserver.config.k8s.io/v1",
+   "kind": "AdmissionConfiguration",
+   "plugins": [
+      {
+         "name": "ImagePolicyWebhook",
+         "configuration": {
+            "imagePolicy": {
+               "kubeConfigFile": "/etc/kubernetes/policywebhook/kubeconf",
+               "allowTTL": 100,
+               "denyTTL": 50,
+               "retryBackoff": 500,
+               "defaultAllow": false
+            }
+         }
+      }
+   ]
+}
+
+
+
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority: /etc/kubernetes/policywebhook/external-cert.pem
+    server: https://localhost:1234
+  name: image-checker
+...
+
+
+
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --enable-admission-plugins=NodeRestriction,ImagePolicyWebhook
+    - --admission-control-config-file=/etc/kubernetes/policywebhook/admission_config.json
+
+controlplane $ k run pod --image=nginx
+Error from server (Forbidden): pods "pod" is forbidden: Post "https://localhost:1234/?timeout=30s": dial tcp 127.0.0.1:1234: connect: connection refused
