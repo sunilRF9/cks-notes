@@ -1,0 +1,27 @@
+####################
+# Your custom rules!
+####################
+
+# Add new rules, like this one
+# - rule: The program "sudo" is run in a container
+#   desc: An event will trigger every time you run sudo in a container
+#   condition: evt.type = execve and evt.dir=< and container.id != host and proc.name = sudo
+#   output: "Sudo run in container (user=%user.name %container.info parent=%proc.pname cmdline=%proc.cmdline)"
+#   priority: ERROR
+#   tags: [users, container]
+
+# Or override/append to any rule, macro, or list from the Default Rules
+- macro: user_expected_terminal_shell_in_container_conditions
+  condition: (never_true)
+
+- rule: Terminal shell in container
+  desc: A shell was used as the entrypoint/exec point into a container with an attached terminal.
+  condition: >
+    spawned_process and container
+    and shell_procs and proc.tty != 0
+    and container_entrypoint
+    and not user_expected_terminal_shell_in_container_conditions
+  output: >
+     (timestamp=%evt.time.s user=%user.uid container_id=%container.id image=%container.image.repository)
+  priority: ALERT
+  tags: [container, shell, mitre_execution]
