@@ -1,0 +1,29 @@
+# Container level securityContext
+controlplane $ k -n sun run pod-ro --image=busybox:1.32.0 --command sleep 1d --dry-run=client -oyaml > pod.yaml^C 
+
+controlplane $ cat pod.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod-ro
+  name: pod-ro
+  namespace: sun
+spec:
+  containers:
+  - command:
+    - sleep
+    - 1d
+    image: busybox:1.32.0
+    name: pod-ro
+    securityContext:
+      readOnlyRootFilesystem: true
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+controlplane $ k get po -n sun  
+NAME     READY   STATUS    RESTARTS   AGE
+pod-ro   1/1     Running   0          60s

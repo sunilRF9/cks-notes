@@ -209,3 +209,29 @@ kind: Pod
 metadata:
   annotations:
     container.apparmor.security.beta.kubernetes.io/nginx: localhost/restricted-nginx
+
+
+#scp profile node01:/root/profile
+#use annotations at pod level not at deployment level
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spacecow
+  namespace: moon
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spacecow
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: spacecow
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/httpd: localhost/docker-default
+    spec:
+      containers:
+      - image: httpd:2.4.52-alpine
+        name: httpd
