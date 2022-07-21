@@ -22,6 +22,6 @@
     and container_entrypoint
     and not user_expected_terminal_shell_in_container_conditions
   output: >
-     (timestamp=%evt.time.s user=%user.uid container_id=%container.id image=%container.image.repository)
+     %evt.time.s,%user.uid,%container.id,%container.image.repository
   priority: ALERT
   tags: [container, shell, mitre_execution]
