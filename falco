@@ -40,3 +40,6 @@
     File below a known binary directory opened for writing (user=%user.name file_updated=%fd.name command=%proc.cmdline)
   priority: CRITICAL
   tags: [filesystem, mitre_persistence]
+-----
+%evt.time.s,%user.uid,%container.id,%container.image.repository
+Jul 22 14:37:22 vagrant falco: 14:37:22.493614359: Alert 14:37:22,0,222f79c201ca,nginx
